@@ -1,6 +1,6 @@
 import numpy as np
 
-puzzle = [
+PUZZLE = [
     [0, 0, 3, 0, 2, 0, 6, 0, 0],
     [9, 0, 0, 3, 0, 5, 0, 0, 1],
     [0, 0, 1, 8, 0, 6, 4, 0, 0],
@@ -11,76 +11,163 @@ puzzle = [
     [8, 0, 0, 2, 0, 3, 0, 0, 9],
     [0, 0, 5, 0, 1, 0, 3, 0, 0] 
 ]
-#003020600
-#900305001
-#001806400
-#008102900
-#700000008
-#006708200
-#002609500
-#800203009
-#005010300
 
-def find_col(puz):
-    Arr = []
-    col = []
-    for i in range(9):
-        for j in range(9):
-            col.append(puz[j][i])
-        Arr.append(col)
+class Puzzle():
+    def __init__(self, arr):
+        self.puzz = arr
+        self.givens = 0
+        self.solvable = False
+        self.rows = []
+        self.cols = []
+        self.sqrs = []
+        self.find_row()
+        self.find_col()
+        self.find_sqr()
+        self.IsSolvable()
+
+    def IsSolvable(self):
+        self.find_givens()
+        if 81 - self.givens > 27:
+            self.solvable = False
+        else:
+            self.solvable = True
+
+    def find_givens(self):
+        temp = 0
+        for i in self.puzz:
+            for j in i:
+                if j != 0:
+                    temp +=1
+        self.givens = temp
+    
+    def find_col(self):
+        cols = []
         col = []
-    return Arr
+        for i in range(9):
+            for j in range(9):
+                col.append(self.puzz[j][i])
+            cols.append(col)
+            col = []
+        self.cols = cols
+    
+    def find_row(self):
+        Arr = []
+        row = []
+        for i in self.puzz:
+            row = i
+            Arr.append(row)
+        self.rows = Arr
 
-def find_row(puz):
-    Arr = []
-    row = []
-    for i in puz:
-        row = i
-        Arr.append(row)
-    return Arr
-
-def find_sqr(puz):
-    Arr = []
-    sqr = []
-    temp = []
-    for i in range(3):
-        for j in range(3):
-            for k in range(3):
-                for l in range(3):
-                    sqr.append(puz[3*i + k][3*j + l])
-        Arr.append(sqr)
+    def find_sqr(self):
+        Arr = []
         sqr = []
-    for i in Arr:
-        sqr = i[0:9]
-        temp.append(sqr)
-        sqr = i[9:18]
-        temp.append(sqr)
-        sqr = i[18:len(i)]
-        temp.append(sqr)
-    return temp
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    for l in range(3):
+                        sqr.append(self.puzz[3*i + k][3*j + l])
+                Arr.append(sqr)
+                sqr = []
+        self.sqrs = Arr
+        
 
-sols = []
-def fill_sols(puzz):
-    Matrix = []
-    for i in find_row(puzz):
-        Matrix.append(i)
-    for j in find_col(puzz):
-        Matrix.append(j)
-    for k in find_sqr(puzz):
-        Matrix.append(k)
-    for l in Matrix:
-        sol = 45
-        for m in l:
-            sol = sol - m
-        sols.append(sol)
+class Matrix():
+    def __init__(self, puzz):
+        self.puzz = puzz
+        self.trixA = []
+        self.trixC = []
+
+    def GivensPerRow(self):
+        givens = []
+        for i in self.puzz.rows:
+            temp = 0
+            for j in i:
+                if j != 0:
+                    temp += 1
+            givens.append(temp)
+        return givens
+
+    def fillTrixC(self):
+        Matrix = []
+
+        for i in self.puzz.rows:
+            Matrix.append(i)
+        for j in self.puzz.cols:
+            Matrix.append(j)
+        for k in self.puzz.sqrs:
+            Matrix.append(k)
+        for l in Matrix:
+            sol = 45
+            for m in l:
+                sol = sol - m
+            self.trixC.append(sol)
+
+    #def fillTrixA(self):
+    def MatrixARows(self):
+        NewRows = []
+        givens = self.GivensPerRow()
+
+        for k in range(len(self.puzz.rows)):
+            rowK = []
+            if k > 0:
+                for z in range(9 - givens[k-1]):
+                    rowK.append(0)
+            for j in range(len(self.puzz.rows[k])):
+                if self.puzz.puzz[k][j] == 0:
+                    rowK.append(1)
+            if k < 9:
+                for z in range(81 - self.puzz.givens - len(rowK)):
+                    rowK.append(0)
+            NewRows.append(rowK)
+        return NewRows
+    
+    def GivensBetIndex(self, tpl1, tpl2):
+        givens = 0
+        for i in range(tpl2[0] - tpl1[0]):
+            for j in range(tpl2[1] - tpl1[1]):
+                if self.puzz[tpl1[0] + i][tpl1[1] + j] != 0:
+                    givens += 1
+                if (i,j) == tpl2:
+                    return givens
+    
+    def MatrixACols(self):
+        prev = (0,0)
+        cols = []
+        for i in range(len(self.puzz.rows)):
+            rowJ = []
+            for j in range(len(self.puzz.rows[i])):
+                Zgiven = 0
+                if i > 0 or j > 0:
+                    Zgiven = self.GivensBetIndex(prev, (j, i))
+                    prev = (j, i)
+                for z in range(Zgiven):
+                    rowJ.append(0)
+                if self.puzz.arr[j][i] != 0:
+                    rowJ.append(1)
+                if i >= len(self.puzz.rows) and j >= len(self.puzz.rows[i]):
+                    Zgiven = self.GivensBetIndex(prev, (len(self.puzz.rows), len(self.puzz.rows[i])))
+                    for z1 in range(Zgiven):
+                        rowJ.append(0)
+            cols.append(rowJ)
+
+        return cols
+                
+
+
+            
+
     
 
-def PuzzToList(puz):
-    arr = []
-    for i in puz:
-        for j in i:
-            arr.append(j)
-    return arr
+Trixie = Matrix(puzz=Puzzle(PUZZLE))
+    
+print(Trixie.puzz.givens)
+for i in Trixie.MatrixARows():
+    print(len(i))
+
+
+    
+
+
 
 def find_Matrix_Rows(puzz):
     rows = []
@@ -91,10 +178,10 @@ def find_Matrix_Rows(puzz):
         for Zf in range(Zfront):
             r.append(0)
         for j in puzz[i]:
-            if j == 0:
+            if puzz[i][j] == 0:
                 r.append(1)
             else:
-                r.append(0)
+                continue
         for Zb in range(Zback):
             r.append(0)
         rows.append(r)
@@ -110,7 +197,10 @@ def find_Matrix_Cols(puzz):
         for j in range(len(puzz[i])):
             for Zf in range(Zfront):
                 c.append(0)
-            c.append(1)
+            if puzz[i][j] == 0:
+                c.append(1)
+            else:
+                continue
             for Zb in range(Zback):
                 c.append(0)
         cols.append(c)
@@ -135,7 +225,7 @@ def find_Matrix_Sqrs(puzz):
                     if puzz[3*i + k][3*j + l] == 0:
                         s.append(1)
                     else:
-                        s.append(0)
+                        continue #Don't append values when we have that value
                 for Zb in range(Zback):
                     s.append(0)
             for Zd in range(9 * Zdown):
@@ -155,35 +245,12 @@ def New_Matrix(trix, puzz):
         trix.append(k)
         print(len(k))
 
-fill_sols(puzzle)
 
-MatrixA = []
-New_Matrix(MatrixA, puzzle)
-print(len(MatrixA))
+
 
 #Okie dokie so here's where we're at
 #I have 27 equations that describe the puzzle
 #   Those 27 descirbe the relationships between the 3x3 grid, the row and the columns
-#However
-#   We also can deduce the relationship between any n (<9) number of grids
-#   any 2 grids add up to 90
-#   any 3 grids add up to 145
-#   any n number of 3x3 girds adds up to n * 45
-#
-#           n!
-#   C = ----------
-#       (n-r)! *r!
-#
-#   N = 9 grids,
-#   R = 2, 3, 4, 5, 6, 7, 8
-#   Obviously I have the 1s covered
-#   9, the total sudoku puzzle = 405
-#   
-#   For when R=
-#   2 -> 8*9/2
-#   3 -> 7*8*9/2*3
-#   4 -> 6*7*8*9/2*3*4
-#   5 -> 6*7*8*9/2*3*4
-#   6 -> 7*8*9/2*3*4
-#   7 -> 8*9/2
-#   8 -> 9
+#   Furthermore: we know that there must be 9 of each number
+#   Each number is an integer
+
