@@ -141,7 +141,23 @@ class Matrix():
                 
     def MatrixASqrs(self):
         #do i need 6 or eight loops here?
-        return 0
+        #I should only need 6
+        #The first two select which of the 9 squares i need, the other four do the normal function
+        sqrs = []
+        for i in range(3):
+            for j in range(3):
+                sqr = []
+                for k in range(len(self.puzz.puzz)):
+                    for l in range(len(self.puzz.puzz[k])):
+                        if (k//3 == i and l//3 == j):
+                            if self.puzz.puzz[k][l] == 0:
+                                sqr.append(1)
+                        else:
+                            if self.puzz.puzz[k][l] == 0:
+                                sqr.append(0)
+                sqrs.append(sqr)
+
+        return sqrs
 
             
 
@@ -150,10 +166,10 @@ class Matrix():
 Trixie = Matrix(puzz=Puzzle(PUZZLE))
     
 print(Trixie.puzz.givens)
-for i in Trixie.MatrixACols():
+for i in Trixie.MatrixASqrs():
     print(len(i))
     
-print(Trixie.MatrixACols()[2])
+print(Trixie.MatrixASqrs()[3])
 
     
 
