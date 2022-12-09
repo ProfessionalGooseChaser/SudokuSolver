@@ -121,38 +121,27 @@ class Matrix():
             NewRows.append(rowK)
         return NewRows
     
-    def GivensBetIndex(self, tpl1, tpl2):
-        givens = 0
-        for i in range(tpl2[0] - tpl1[0]):
-            for j in range(tpl2[1] - tpl1[1]):
-                if self.puzz[tpl1[0] + i][tpl1[1] + j] != 0:
-                    givens += 1
-                if (i,j) == tpl2:
-                    return givens
-    
     def MatrixACols(self):
         prev = (0,0)
         cols = []
-        for i in range(len(self.puzz.rows)):
-            rowJ = []
-            for j in range(len(self.puzz.rows[i])):
-                Zgiven = 0
-                if i > 0 or j > 0:
-                    Zgiven = self.GivensBetIndex(prev, (j, i))
-                    prev = (j, i)
-                for z in range(Zgiven):
-                    rowJ.append(0)
-                if self.puzz.arr[j][i] != 0:
-                    rowJ.append(1)
-                if i >= len(self.puzz.rows) and j >= len(self.puzz.rows[i]):
-                    Zgiven = self.GivensBetIndex(prev, (len(self.puzz.rows), len(self.puzz.rows[i])))
-                    for z1 in range(Zgiven):
-                        rowJ.append(0)
-            cols.append(rowJ)
-
+        for i in range(len(self.puzz.cols)):
+            col = []
+            for j in range(len(self.puzz.puzz)):
+                for k in range(len(self.puzz.puzz[j])):
+                    if k == i:
+                        if self.puzz.puzz[j][k] == 0:
+                            col.append(1)
+                        else:
+                            continue
+                    else:
+                        if self.puzz.puzz[j][k] == 0:
+                            col.append(0)
+            cols.append(col)
         return cols
                 
-
+    def MatrixASqrs(self):
+        #do i need 6 or eight loops here?
+        return 0
 
             
 
@@ -161,9 +150,10 @@ class Matrix():
 Trixie = Matrix(puzz=Puzzle(PUZZLE))
     
 print(Trixie.puzz.givens)
-for i in Trixie.MatrixARows():
+for i in Trixie.MatrixACols():
     print(len(i))
-
+    
+print(Trixie.MatrixACols()[2])
 
     
 
