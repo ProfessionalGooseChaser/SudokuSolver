@@ -15,30 +15,12 @@ PUZZLE = [
 class Puzzle():
     def __init__(self, arr):
         self.puzz = arr
-        self.givens = 0
-        self.solvable = False
         self.rows = []
         self.cols = []
         self.sqrs = []
         self.find_row()
         self.find_col()
         self.find_sqr()
-        self.IsSolvable()
-
-    def IsSolvable(self):
-        self.find_givens()
-        if 81 - self.givens > 27:
-            self.solvable = False
-        else:
-            self.solvable = True
-
-    def find_givens(self):
-        temp = 0
-        for i in self.puzz:
-            for j in i:
-                if j != 0:
-                    temp +=1
-        self.givens = temp
     
     def find_col(self):
         cols = []
@@ -69,13 +51,16 @@ class Puzzle():
                 Arr.append(sqr)
                 sqr = []
         self.sqrs = Arr
-        
+    
+    def WhichSqr(self, x, y):
+        return (x//3)+(y//3)
 
 class Matrix():
     def __init__(self, puzz):
         self.puzz = puzz
         self.trixA = []
-        self.trixC = []
+        self.trixB = []
+        self.solvable = False
 
     def GivensPerRow(self):
         givens = []
@@ -87,7 +72,7 @@ class Matrix():
             givens.append(temp)
         return givens
 
-    def fillTrixC(self):
+    def fillTrixB(self):
         Matrix = []
 
         for i in self.puzz.rows:
@@ -100,9 +85,8 @@ class Matrix():
             sol = 45
             for m in l:
                 sol = sol - m
-            self.trixC.append(sol)
+            self.trixB.append(sol)
 
-    #def fillTrixA(self):
     def MatrixARows(self):
         NewRows = []
         givens = self.GivensPerRow()
@@ -159,98 +143,67 @@ class Matrix():
 
         return sqrs
 
-            
+    def IsSolvable(self):
+        relationships = 0
+        vars = len(self.trixA[0])
+        for i in self.TrixB:
+            if i != 0:
+                relationships += 1
+        return True if vars == relationships else False
+        
+        
 
+class guesser():
+    def __init__(self, matrix, puzzle):
+        self.puzz = puzzle
+        self.trix = matrix
+        self.RowConstraints = {}
+        self.ColConstraints = {}
+        self.SqrConstraints = {}
+        self.MUST = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     
+    def SetRowConstraints(self):
+        count = 0
+        for i in self.puzz.rows:
+            temp = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            for j in i:
+                if j in temp:
+                    temp.remove(j)
+            self.RowConstraints.update({count: temp})
+            count +=1
+            del temp
 
+    def SetColConstraints(self):
+        count = 0
+        for i in self.puzz.cols:
+            temp = self.MUST
+            for j in i:
+                if j in temp:
+                    temp.remove(j)
+            self.ColConstraints.update({count: temp})
+            count +=1
+            del temp
+    
+    def SetSqrConstraints(self):
+        count = 0
+        for i in self.puzz.rows:
+            temp = self.MUST
+            for j in i:
+                if j in temp:
+                    temp.remove(j)
+            self.RowConstraints.update({count: temp})
+            count +=1
+            del temp
+
+
+
+#Testing!!
 Trixie = Matrix(puzz=Puzzle(PUZZLE))
     
-print(Trixie.puzz.givens)
-for i in Trixie.MatrixASqrs():
-    print(len(i))
-    
-print(Trixie.MatrixASqrs()[3])
+GuessNot = guesser(Trixie, Trixie.puzz)
 
-    
-
-
-
-def find_Matrix_Rows(puzz):
-    rows = []
-    r = []
-    for i in range(len(puzz)):
-        Zfront = 9 * i
-        Zback = (8 - i) * 9
-        for Zf in range(Zfront):
-            r.append(0)
-        for j in puzz[i]:
-            if puzz[i][j] == 0:
-                r.append(1)
-            else:
-                continue
-        for Zb in range(Zback):
-            r.append(0)
-        rows.append(r)
-        r = []
-    return rows
-
-def find_Matrix_Cols(puzz):
-    cols = []
-    c = []
-    for i in range(len(puzz)):
-        Zfront = i
-        Zback = 8 - i
-        for j in range(len(puzz[i])):
-            for Zf in range(Zfront):
-                c.append(0)
-            if puzz[i][j] == 0:
-                c.append(1)
-            else:
-                continue
-            for Zb in range(Zback):
-                c.append(0)
-        cols.append(c)
-        c = []
-    return cols
-
-def find_Matrix_Sqrs(puzz):
-    sqrs = []
-    s = []
-    for i in range(3):
-        Zfront = 3 * i
-        Zback = 6 - Zfront
-        for j in range(3):
-            Zabove = 3 * j
-            Zdown = 6 - Zabove
-            for Za in range(9 * Zabove):
-                s.append(0)
-            for k in range(3):
-                for Zf in range(Zfront):
-                    s.append(0)
-                for l in range(3):
-                    if puzz[3*i + k][3*j + l] == 0:
-                        s.append(1)
-                    else:
-                        continue #Don't append values when we have that value
-                for Zb in range(Zback):
-                    s.append(0)
-            for Zd in range(9 * Zdown):
-                s.append(0)
-            sqrs.append(s)
-            s = []
-    return sqrs
-
-def New_Matrix(trix, puzz):
-    for i in find_Matrix_Rows(puzz):
-        trix.append(i)
-        print(len(i))
-    for j in find_Matrix_Cols(puzz):
-        trix.append(j)
-        print(len(j))
-    for k in find_Matrix_Sqrs(puzz):
-        trix.append(k)
-        print(len(k))
-
+GuessNot.SetRowConstraints()
+print(GuessNot.RowConstraints)
 
 
 
