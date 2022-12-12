@@ -60,7 +60,7 @@ class Matrix():
         self.puzz = puzz
         self.trixA = []
         self.trixB = []
-        self.solvable = False
+        self.solvable = self.IsSolvable()
 
     def GivensPerRow(self):
         givens = []
@@ -150,10 +150,8 @@ class Matrix():
             if i != 0:
                 relationships += 1
         return True if vars == relationships else False
-        
-        
-
-class guesser():
+             
+class Guesser():
     def __init__(self, matrix, puzzle):
         self.puzz = puzzle
         self.trix = matrix
@@ -161,6 +159,9 @@ class guesser():
         self.ColConstraints = {}
         self.SqrConstraints = {}
         self.MUST = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        self.SetRowConstraints()
+        self.SetColConstraints()
+        self.SetSqrConstraints()
     
     def SetRowConstraints(self):
         count = 0
@@ -195,12 +196,59 @@ class guesser():
             count +=1
             del temp
 
+    
+
+
+
+def guess(solution, I, J):
+        puzzle = solution.puzz.arr
+        for i in range(len(puzzle)):
+            if(i ==0):
+                i += I
+            for j in range(len(puzzle[i])):
+                if (j ==0):
+                    j += J
+                if puzzle[i][j]==0:
+                    intersect = list(np.intersect1d((solution.RowConstraints[i], solution.ColConstraints[j], solution.SqrConstratins[3*(i//3) + j//3])))
+                    for k in intersect:
+                        puzzle[i][j] = k
+                        NewPuzz = Puzzle(puzzle)
+                        NewTrix = Matrix(NewPuzz)
+                        return Guesser(NewTrix, NewPuzz)
+        return 0
+
+def iterative_improvement(initial):  #These two functions were described by Chat GPT. I will upload a picture of what I am referencing
+    solution_set = {}
+    curr = initial
+    while True:
+        improved = guess(curr, 0, 0)
+        if improved in solution_set:
+            continue
+        else:
+            solution_set[improved] = curr
+            if improved.trix.solvable:
+                #solve
+                return improved
+            elif improved != 0 and len(improved.trix.trixA[0]) < len(curr.trix.trixA[0]): #better solution
+                curr = improved
+            else:
+                #backtracking
+                while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]):
+                    curr = solution_set[curr]
+                    i, j = 0
+                    improved = guess(curr, i, j)
+                    i, j += 1
+                    if improved in solution_set:
+                        continue
+            curr = improved
+    
+
 
 
 #Testing!!
 Trixie = Matrix(puzz=Puzzle(PUZZLE))
     
-GuessNot = guesser(Trixie, Trixie.puzz)
+GuessNot = Guesser(Trixie, Trixie.puzz)
 
 GuessNot.SetRowConstraints()
 print(GuessNot.RowConstraints)
