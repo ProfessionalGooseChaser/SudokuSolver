@@ -46,3 +46,50 @@ def ChatGPT(image_path):
     return sudoku
 
 print(ChatGPT("ExamplePuzzle1.png"))
+
+def oldTRIXsqrs():
+    for i in range(3):
+            for j in range(3):
+                sqr = []
+                for k in range(3):
+                    for l in range(3):
+                        for m in range(3):
+                            for n in range(3):
+                                if(i, j) == (k, l):
+                                    if self.puzz.puzz[3*k + m][3*l + n] == 0:
+                                        sqr.append(1)
+                                else:
+                                    if self.puzz.puzz[3*k + m][3*l + n] == 0:
+                                        sqr.append(0)
+                sqrs.append(sqr)
+                sqr = []
+
+    
+def improve_solution(solution):
+    # Implement your algorithm to improve the solution here
+    return improved_solution
+
+def iterative_improvement(initial_solution):
+    solution_set = {}
+    current_solution = initial_solution
+    while True:
+        improved_solution = improve_solution(current_solution)
+        if improved_solution in solution_set:
+            # This solution has already been seen, so skip it
+            continue
+        else:
+            solution_set[improved_solution] = current_state
+            if improved_solution is better than current_solution:
+                current_solution = improved_solution
+            else:
+                # We have reached a local optimum, so we need to backtrack
+                while improved_solution is not better than current_solution:
+                    current_solution = previous_solution
+                    current_state = solution_set[current_solution]
+                    improved_solution = improve_solution(current_solution)
+                    if improved_solution in solution_set:
+                        # This solution has already been seen, so skip it
+                        continue
+                # We have found a better solution, so we can continue the search
+                current_solution = improved_solution
+    return current_solution
