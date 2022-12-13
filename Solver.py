@@ -1,4 +1,5 @@
 import numpy as np
+from functools import reduce
 
 PUZZLE = [
     [0, 0, 3, 0, 2, 0, 6, 0, 0],
@@ -23,7 +24,8 @@ class Puzzle():
         self.find_row()
         self.find_col()
         self.find_sqr()
-    
+        self.givens = self.find_givens()
+
     def find_col(self):
         cols = []
         col = []
@@ -53,6 +55,14 @@ class Puzzle():
                 Arr.append(sqr)
                 sqr = []
         self.sqrs = Arr
+
+    def find_givens(self):
+        temp = 0
+        for i in self.puzz:
+            for j in i:
+                if j != 0:
+                    temp +=1
+        return temp
     
     def WhichSqr(self, x, y):
         return (x//3)+(y//3)
@@ -62,6 +72,8 @@ class Matrix():
         self.puzz = puzz
         self.trixA = []
         self.trixB = []
+        self.fillTrixA()
+        self.fillTrixB()
         self.solvable = self.IsSolvable()
 
     def GivensPerRow(self):
@@ -145,10 +157,18 @@ class Matrix():
 
         return sqrs
 
+    def fillTrixA(self):
+        for i in self.MatrixARows():
+            self.trixA.append(i)
+        for j in self.MatrixACols():
+            self.trixA.append(j)
+        for k in self.MatrixASqrs():
+            self.trixA.append(k)
+
     def IsSolvable(self):
         relationships = 0
         vars = len(self.trixA[0])
-        for i in self.TrixB:
+        for i in self.trixB:
             if i != 0:
                 relationships += 1
         return True if vars == relationships else False
@@ -207,21 +227,24 @@ class Guesser():
 
 # i want to pass it something better than coords, maybe an index and coords? And pass it coords more effectively?
 def guess(solution, I, J):
-        puzzle = solution.puzz.arr
-        for i in range(len(puzzle)):
+        puzzle = solution.puzz.puzz
+        for i in range(len(puzzle) - I):
             if(i ==0):
-                i += I
-            for j in range(len(puzzle[i])):
+                i += I - 1
+            for j in range(len(puzzle[i]) - J):
                 if (j ==0):
-                    j += J
+                    j += J - 1
                 if puzzle[i][j]==0:
-                    intersect = list(np.intersect1d((solution.RowConstraints[i], solution.ColConstraints[j], solution.SqrConstratins[3*(i//3) + j//3])))
-                    for k in intersect:
-                        puzzle[i][j] = k
-                        NewPuzz = Puzzle(puzzle)
-                        NewTrix = Matrix(NewPuzz)
-                        return Guesser(NewTrix, NewPuzz)
-        return 0
+                    try:
+                        intersect = list(reduce(np.intersect1d((solution.RowConstraints[i], solution.ColConstraints[j], solution.SqrConstraints[3*(i//3) + j//3]))))
+                        for k in intersect:
+                            puzzle[i][j] = k
+                            NewPuzz = Puzzle(puzzle)
+                            NewTrix = Matrix(NewPuzz)
+                            return Guesser(NewTrix, NewPuzz)
+                    except:
+                        continue
+        return solution
 
 def iterative_improvement(initial):  #These two functions were described by Chat GPT. I will upload a picture of what I am referencing
     solution_set = {}
@@ -233,6 +256,7 @@ def iterative_improvement(initial):  #These two functions were described by Chat
         else:
             solution_set[improved] = curr
             if improved.trix.solvable:
+                print(improved.trix.Solve())
                 IFFY = False
                 for i in improved.trix.Solve():
                     if i not in NUM:
@@ -243,19 +267,31 @@ def iterative_improvement(initial):  #These two functions were described by Chat
                 curr = improved
             else:
                 #backtracking
+                i = 0
+                j = 0
                 while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]):
                     curr = solution_set[curr]
-                    i, j = 0
+                    
                     improved = guess(curr, i, j)
-                    i, j += 1
+                    if(i < 9):
+                        i += 1
+                    else:
+                        i = 0
+                        j+= 1
                     if improved in solution_set:
                         continue
             if IFFY:
+                i = 0
+                j = 0
                 while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]):
                     curr = solution_set[curr]
-                    i, j = 0
+                    
                     improved = guess(curr, i, j)
-                    i, j += 1
+                    if(i < 9):
+                        i += 1
+                    else:
+                        i = 0
+                        j+= 1
                     if improved in solution_set:
                         continue
             curr = improved
@@ -268,8 +304,7 @@ Trixie = Matrix(puzz=Puzzle(PUZZLE))
     
 GuessNot = Guesser(Trixie, Trixie.puzz)
 
-GuessNot.SetRowConstraints()
-print(GuessNot.RowConstraints)
+iterative_improvement(GuessNot)
 
 
 
