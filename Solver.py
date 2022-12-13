@@ -12,6 +12,8 @@ PUZZLE = [
     [0, 0, 5, 0, 1, 0, 3, 0, 0] 
 ]
 
+NUM = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
 class Puzzle():
     def __init__(self, arr):
         self.puzz = arr
@@ -150,7 +152,12 @@ class Matrix():
             if i != 0:
                 relationships += 1
         return True if vars == relationships else False
-             
+
+    def Solve(self):
+        A = np.array(self.trixA)
+        B = np.array(self.trixB)
+        return np.linalg.solve(A, B)
+
 class Guesser():
     def __init__(self, matrix, puzzle):
         self.puzz = puzzle
@@ -196,10 +203,9 @@ class Guesser():
             count +=1
             del temp
 
-    
+        
 
-
-
+# i want to pass it something better than coords, maybe an index and coords? And pass it coords more effectively?
 def guess(solution, I, J):
         puzzle = solution.puzz.arr
         for i in range(len(puzzle)):
@@ -227,12 +233,24 @@ def iterative_improvement(initial):  #These two functions were described by Chat
         else:
             solution_set[improved] = curr
             if improved.trix.solvable:
-                #solve
-                return improved
+                IFFY = False
+                for i in improved.trix.Solve():
+                    if i not in NUM:
+                       IFFY = True
+                    else: 
+                        return improved
             elif improved != 0 and len(improved.trix.trixA[0]) < len(curr.trix.trixA[0]): #better solution
                 curr = improved
             else:
                 #backtracking
+                while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]):
+                    curr = solution_set[curr]
+                    i, j = 0
+                    improved = guess(curr, i, j)
+                    i, j += 1
+                    if improved in solution_set:
+                        continue
+            if IFFY:
                 while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]):
                     curr = solution_set[curr]
                     i, j = 0
