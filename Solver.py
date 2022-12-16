@@ -1,5 +1,6 @@
 import numpy as np
 from functools import reduce
+from random import randint
 
 PUZZLE = [
     [0, 0, 3, 0, 2, 0, 6, 0, 0],
@@ -255,6 +256,23 @@ def guess(solution, I, J, K):
                     return Guesser(NewTrix, NewPuzz)
     return solution
 
+def RandomGuess(solution):
+    puzzle = solution.puzz.puzz
+    while True:
+        x = randint(0, len(puzzle))
+        y = randint(0, len(puzzle[x]))
+        if puzzle[x][y] == 0:
+            intersect = reduce(np.intersect1d, (solution.RowConstraints[x], solution.ColConstraints[y], solution.SqrConstraints[3*(x//3) + y//3]))
+            if intersect: #truthy values
+                k = randint(0, len(intersect) - 1)
+                puzzle[x][y] = intersect[k]
+                NewPuzz = Puzzle(puzzle)
+                NewTrix = Matrix(NewPuzz)
+                return Guesser(NewTrix, NewPuzz)
+            else:
+                print(intersect)
+
+
 def iterative_improvement(initial):  #These two functions were described by Chat GPT. I will upload a picture of what I am referencing
     solution_set = {}
     curr = initial
@@ -263,7 +281,7 @@ def iterative_improvement(initial):  #These two functions were described by Chat
     while True:
         count += 1
         print(count)
-        improved = guess(curr, 0, 0, 0)
+        improved = RandomGuess(curr)
         if improved in solution_set:
             continue
         else:
@@ -279,41 +297,41 @@ def iterative_improvement(initial):  #These two functions were described by Chat
                 curr = improved
             else:
                 #backtracking
-                i = 1
-                j = 1
-                k = 1
+                #i = 1
+                #j = 1
+                #k = 1
                 while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]):
                     curr = solution_set[curr]
                     
-                    improved = guess(curr, i, j, k)
-                    if(i < 9):
-                        i += 1
-                    else:
-                        i = 0
-                        j+= 1
-                    if i > 9 and j > 9:
-                        i = 0
-                        j = 0
-                        k += 1
+                    improved = RandomGuess(curr)
+                    #if(i < 9):
+                        #i += 1
+                    #else:
+                        #i = 0
+                        #j+= 1
+                    #if i > 9 and j > 9:
+                        #i = 0
+                        #j = 0
+                        #k += 1
                     if improved in solution_set:
                         continue
             if IFFY:
-                l = 0
-                m = 0
-                n = 0
+                #l = 0
+                #m = 0
+                #n = 0
                 while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]):
                     curr = solution_set[curr]
                     
-                    improved = guess(curr, l, m, n)
-                    if(l < 9):
-                        l += 1
-                    else:
-                        l = 0
-                        m += 1
-                    if l > 9 and m > 9:
-                        l = 0
-                        m = 0
-                        n += 1
+                    improved = RandomGuess(curr)
+                    #if(l < 9):
+                        #l += 1
+                    #else:
+                        #l = 0
+                        #m += 1
+                    #if l > 9 and m > 9:
+                        #l = 0
+                        #m = 0
+                        #n += 1
                     if improved in solution_set:
                         continue
             IFFY = False
