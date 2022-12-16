@@ -99,7 +99,10 @@ class Matrix():
             sol = 45
             for m in l:
                 sol = sol - m
-            self.trixB.append(sol)
+            if sol == 0:
+                continue
+            else:
+                self.trixB.append(sol)
 
     def MatrixARows(self):
         NewRows = []
@@ -116,7 +119,10 @@ class Matrix():
             if k < 9:
                 for z in range(81 - self.puzz.givens - len(rowK)):
                     rowK.append(0)
-            NewRows.append(rowK)
+            if sum(rowK) > 0:
+                NewRows.append(rowK)
+            else:
+                continue
         return NewRows
     
     def MatrixACols(self):
@@ -134,7 +140,10 @@ class Matrix():
                     else:
                         if self.puzz.puzz[j][k] == 0:
                             col.append(0)
-            cols.append(col)
+            if sum(col) > 0:
+                cols.append(col)
+            else:
+                continue
         return cols
                 
     def MatrixASqrs(self):
@@ -153,7 +162,10 @@ class Matrix():
                         else:
                             if self.puzz.puzz[k][l] == 0:
                                 sqr.append(0)
-                sqrs.append(sqr)
+                if sum(sqr) > 0:
+                    sqrs.append(sqr)
+                else:
+                    continue
 
         return sqrs
 
@@ -173,127 +185,138 @@ class Matrix():
                 relationships += 1
         return True if vars == relationships else False
 
+    def CheckSingularity(self):
+        A = np.array(self.trixA)
+        return True if np.linalg.det(A) == 0 else False
+
     def Solve(self):
         A = np.array(self.trixA)
         B = np.array(self.trixB)
+        for i in A:
+            print(i)
+            print('\n')
         return np.linalg.solve(A, B)
 
 class Guesser():
     def __init__(self, matrix, puzzle):
         self.puzz = puzzle
         self.trix = matrix
-        self.RowConstraints = {}
-        self.ColConstraints = {}
-        self.SqrConstraints = {}
+        self.RowConstraints = []
+        self.ColConstraints = []
+        self.SqrConstraints = []
         self.MUST = [1, 2, 3, 4, 5, 6, 7, 8, 9]
         self.SetRowConstraints()
         self.SetColConstraints()
         self.SetSqrConstraints()
     
     def SetRowConstraints(self):
-        count = 0
         for i in self.puzz.rows:
             temp = [1, 2, 3, 4, 5, 6, 7, 8, 9]
             for j in i:
                 if j in temp:
                     temp.remove(j)
-            self.RowConstraints.update({count: temp})
-            count +=1
+            self.RowConstraints.append(temp)
             del temp
 
     def SetColConstraints(self):
-        count = 0
         for i in self.puzz.cols:
-            temp = self.MUST
+            temp = [1, 2, 3, 4, 5, 6, 7, 8, 9]
             for j in i:
                 if j in temp:
                     temp.remove(j)
-            self.ColConstraints.update({count: temp})
-            count +=1
+            self.ColConstraints.append(temp)
             del temp
     
     def SetSqrConstraints(self):
-        count = 0
-        for i in self.puzz.rows:
-            temp = self.MUST
+        ##This is just the row constraints, need to fix. 
+        for i in self.puzz.sqrs:
+            temp = [1, 2, 3, 4, 5, 6, 7, 8, 9]
             for j in i:
                 if j in temp:
                     temp.remove(j)
-            self.RowConstraints.update({count: temp})
-            count +=1
+            self.SqrConstraints.append(temp)
             del temp
 
         
 
 # i want to pass it something better than coords, maybe an index and coords? And pass it coords more effectively?
-def guess(solution, I, J):
-        puzzle = solution.puzz.puzz
-        for i in range(len(puzzle) - I):
-            if(i ==0):
-                i += I - 1
-            for j in range(len(puzzle[i]) - J):
-                if (j ==0):
-                    j += J - 1
-                if puzzle[i][j]==0:
-                    try:
-                        intersect = list(reduce(np.intersect1d((solution.RowConstraints[i], solution.ColConstraints[j], solution.SqrConstraints[3*(i//3) + j//3]))))
-                        for k in intersect:
-                            puzzle[i][j] = k
-                            NewPuzz = Puzzle(puzzle)
-                            NewTrix = Matrix(NewPuzz)
-                            return Guesser(NewTrix, NewPuzz)
-                    except:
-                        continue
-        return solution
+def guess(solution, I, J, K):
+    puzzle = solution.puzz.puzz
+    for i in range(len(puzzle) - I):
+        for j in range(len(puzzle[i]) - J):    
+            if puzzle[i][j]==0:
+                intersect = reduce(np.intersect1d, (solution.RowConstraints[i], solution.ColConstraints[j], solution.SqrConstraints[3*(i//3) + j//3]))
+                for k in intersect:
+                    if K > len(intersect):
+                        K = len(intersect)
+                    puzzle[i][j] = intersect[K]
+                    NewPuzz = Puzzle(puzzle)
+                    NewTrix = Matrix(NewPuzz)
+                    return Guesser(NewTrix, NewPuzz)
+    return solution
 
 def iterative_improvement(initial):  #These two functions were described by Chat GPT. I will upload a picture of what I am referencing
     solution_set = {}
     curr = initial
+    count = 0
+    IFFY = False
     while True:
-        improved = guess(curr, 0, 0)
+        count += 1
+        print(count)
+        improved = guess(curr, 0, 0, 0)
         if improved in solution_set:
             continue
         else:
+            count += 1
             solution_set[improved] = curr
             if improved.trix.solvable:
-                print(improved.trix.Solve())
-                IFFY = False
-                for i in improved.trix.Solve():
-                    if i not in NUM:
-                       IFFY = True
-                    else: 
-                        return improved
-            elif improved != 0 and len(improved.trix.trixA[0]) < len(curr.trix.trixA[0]): #better solution
+                if improved.trix.CheckSingularity:
+                    IFFY = True
+                else:
+                    print(improved.puzz.puzz)
+                    return improved
+            elif len(improved.trix.trixA[0]) != 0 and len(improved.trix.trixA[0]) < len(curr.trix.trixA[0]): #better solution
                 curr = improved
             else:
                 #backtracking
-                i = 0
-                j = 0
+                i = 1
+                j = 1
+                k = 1
                 while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]):
                     curr = solution_set[curr]
                     
-                    improved = guess(curr, i, j)
+                    improved = guess(curr, i, j, k)
                     if(i < 9):
                         i += 1
                     else:
                         i = 0
                         j+= 1
+                    if i > 9 and j > 9:
+                        i = 0
+                        j = 0
+                        k += 1
                     if improved in solution_set:
                         continue
             if IFFY:
-                i = 0
-                j = 0
+                l = 0
+                m = 0
+                n = 0
                 while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]):
                     curr = solution_set[curr]
                     
-                    improved = guess(curr, i, j)
-                    if(i < 9):
-                        i += 1
+                    improved = guess(curr, l, m, n)
+                    if(l < 9):
+                        l += 1
                     else:
-                        i = 0
-                        j+= 1
+                        l = 0
+                        m += 1
+                    if l > 9 and m > 9:
+                        l = 0
+                        m = 0
+                        n += 1
                     if improved in solution_set:
                         continue
+            IFFY = False
             curr = improved
     
 
