@@ -238,101 +238,86 @@ class Guesser():
             self.SqrConstraints.append(temp)
             del temp
 
-        
+class Branch():
+    def __init__(self, parent, data):
+        self.parent = parent
+        self.data = data
+        self.children = []
+        self.celibate = False
+    
+
+
 
 # i want to pass it something better than coords, maybe an index and coords? And pass it coords more effectively?
-def guess(solution, I, J, K):
+def guess(solution):
     puzzle = solution.puzz.puzz
-    for i in range(len(puzzle) - I):
-        for j in range(len(puzzle[i]) - J):    
+    for i in range(len(puzzle)):
+        for j in range(len(puzzle[i])):    
             if puzzle[i][j]==0:
                 intersect = reduce(np.intersect1d, (solution.RowConstraints[i], solution.ColConstraints[j], solution.SqrConstraints[3*(i//3) + j//3]))
                 for k in intersect:
-                    if K > len(intersect):
-                        K = len(intersect)
-                    puzzle[i][j] = intersect[K]
+                    puzzle[i][j] = intersect[k]
                     NewPuzz = Puzzle(puzzle)
                     NewTrix = Matrix(NewPuzz)
-                    return Guesser(NewTrix, NewPuzz)
+                    guessed = Guesser(NewTrix, NewPuzz)
+                    return Branch(solution, guessed)
     return solution
 
 def RandomGuess(solution):
     puzzle = solution.puzz.puzz
     while True:
-        x = randint(0, len(puzzle))
-        y = randint(0, len(puzzle[x]))
+        x = randint(0, len(puzzle)-1)
+        y = randint(0, len(puzzle[x])-1)
         if puzzle[x][y] == 0:
             intersect = reduce(np.intersect1d, (solution.RowConstraints[x], solution.ColConstraints[y], solution.SqrConstraints[3*(x//3) + y//3]))
-            if intersect: #truthy values
+            if intersect.any(): #truthy values
                 k = randint(0, len(intersect) - 1)
                 puzzle[x][y] = intersect[k]
                 NewPuzz = Puzzle(puzzle)
                 NewTrix = Matrix(NewPuzz)
-                return Guesser(NewTrix, NewPuzz)
-            else:
-                print(intersect)
+                guessed = Guesser(NewTrix, NewPuzz)
+                return Branch(solution, guessed)
+            
 
 
 def iterative_improvement(initial):  #These two functions were described by Chat GPT. I will upload a picture of what I am referencing
-    solution_set = {}
+    solution_set = {} #This needs to become  multi-Linked List. I'm just using nested 
     curr = initial
     count = 0
     IFFY = False
     while True:
         count += 1
         print(count)
-        improved = RandomGuess(curr)
+        improved = guess(curr)
         if improved in solution_set:
+            improved.celibate = True
             continue
         else:
             count += 1
             solution_set[improved] = curr
-            if improved.trix.solvable:
-                if improved.trix.CheckSingularity:
+            if improved.data.trix.solvable:
+                if improved.data.trix.CheckSingularity:
                     IFFY = True
                 else:
-                    print(improved.puzz.puzz)
+                    print(improved.data.puzz.puzz)
                     return improved
-            elif len(improved.trix.trixA[0]) != 0 and len(improved.trix.trixA[0]) < len(curr.trix.trixA[0]): #better solution
+            elif len(improved.data.trix.trixA[0]) != 0 and len(improved.data.trix.trixA[0]) < len(curr.trix.trixA[0]): #better solution
                 curr = improved
             else:
-                #backtracking
-                #i = 1
-                #j = 1
-                #k = 1
-                while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]):
-                    curr = solution_set[curr]
+                while len(improved.data.trix.trixA[0]) == len(curr.data.trix.trixA[0]) or improved.celibate:
+                    curr = improved.parent
                     
-                    improved = RandomGuess(curr)
-                    #if(i < 9):
-                        #i += 1
-                    #else:
-                        #i = 0
-                        #j+= 1
-                    #if i > 9 and j > 9:
-                        #i = 0
-                        #j = 0
-                        #k += 1
+                    improved = guess(curr)
                     if improved in solution_set:
+                        improved.celibate = True
                         continue
             if IFFY:
-                #l = 0
-                #m = 0
-                #n = 0
-                while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]):
-                    curr = solution_set[curr]
+                while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]) or improved.celibate:
+                    curr = improved.parent
                     
-                    improved = RandomGuess(curr)
-                    #if(l < 9):
-                        #l += 1
-                    #else:
-                        #l = 0
-                        #m += 1
-                    #if l > 9 and m > 9:
-                        #l = 0
-                        #m = 0
-                        #n += 1
+                    improved = guess(curr)
                     if improved in solution_set:
+                        improved.celibate = True
                         continue
             IFFY = False
             curr = improved
@@ -344,8 +329,8 @@ def iterative_improvement(initial):  #These two functions were described by Chat
 Trixie = Matrix(puzz=Puzzle(PUZZLE))
     
 GuessNot = Guesser(Trixie, Trixie.puzz)
-
-iterative_improvement(GuessNot)
+Log = Branch(None, GuessNot)
+iterative_improvement(Log)
 
 
 
