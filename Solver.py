@@ -250,12 +250,12 @@ class Branch():
 
 # i want to pass it something better than coords, maybe an index and coords? And pass it coords more effectively?
 def guess(solution):
-    puzzle = solution.puzz.puzz
+    puzzle = solution.data.puzz.puzz
     for i in range(len(puzzle)):
         for j in range(len(puzzle[i])):    
             if puzzle[i][j]==0:
-                intersect = reduce(np.intersect1d, (solution.RowConstraints[i], solution.ColConstraints[j], solution.SqrConstraints[3*(i//3) + j//3]))
-                for k in intersect:
+                intersect = reduce(np.intersect1d, (solution.data.RowConstraints[i], solution.data.ColConstraints[j], solution.data.SqrConstraints[3*(i//3) + j//3]))
+                for k in range(len(intersect)):
                     puzzle[i][j] = intersect[k]
                     NewPuzz = Puzzle(puzzle)
                     NewTrix = Matrix(NewPuzz)
@@ -287,7 +287,9 @@ def iterative_improvement(initial):  #These two functions were described by Chat
     IFFY = False
     while True:
         count += 1
-        print(count)
+        print(len(solution_set), count)
+        if count > 1000000:
+            break
         improved = guess(curr)
         if improved in solution_set:
             improved.celibate = True
@@ -301,7 +303,7 @@ def iterative_improvement(initial):  #These two functions were described by Chat
                 else:
                     print(improved.data.puzz.puzz)
                     return improved
-            elif len(improved.data.trix.trixA[0]) != 0 and len(improved.data.trix.trixA[0]) < len(curr.trix.trixA[0]): #better solution
+            elif len(improved.data.trix.trixA[0]) != 0 and len(improved.data.trix.trixA[0]) < len(curr.data.trix.trixA[0]): #better solution
                 curr = improved
             else:
                 while len(improved.data.trix.trixA[0]) == len(curr.data.trix.trixA[0]) or improved.celibate:
@@ -312,7 +314,7 @@ def iterative_improvement(initial):  #These two functions were described by Chat
                         improved.celibate = True
                         continue
             if IFFY:
-                while len(improved.trix.trixA[0]) == len(curr.trix.trixA[0]) or improved.celibate:
+                while len(improved.data.trix.trixA[0]) == len(curr.data.trix.trixA[0]) or improved.celibate:
                     curr = improved.parent
                     
                     improved = guess(curr)
