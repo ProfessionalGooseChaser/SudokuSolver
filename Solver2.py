@@ -1,3 +1,4 @@
+from functools import reduce
 import numpy as np
 
 PUZZLE = [
@@ -123,7 +124,82 @@ class Solution():
                 self.MatrixA.remove(i)
 
     def setConstraints(self):
+        #Row Constraints
         Rc = []
-        temp = range(1, 10)
+        for i in self.puzz.rows():
+            temp = list(range(1, 10))
+            for j in i:
+                if j in temp:
+                    temp.remove(j)
+            Rc.append(temp)
+        self.constraints.append(Rc)
 
-print(list(range(1, 10)))
+        #Column Constraints
+        Cc = []
+        for i in self.puzz.cols():
+            temp = list(range(1, 10))
+            for j in i:
+                if j in temp:
+                    temp.remove(j)
+            Cc.append(temp)
+        self.constraints.append(Cc)
+
+        #Square Constraints
+        Sc = []
+        for i in self.puzz.sqrs():
+            temp = list(range(1, 10))
+            for j in i:
+                if j in temp:
+                    temp.remove(j)
+            Sc.append(temp)
+        self.constraints.append(Sc)
+
+    def Solvable(self):
+        if len(self.MatrixA[0]) != len(self.MatrixB):
+            return False
+        elif np.linalg.det(np.array(self.MatrixA)) == 0:
+            return False
+        else:
+            return True
+
+    def Solve(self):
+        A = np.array(self.MatrixA)
+        B = np.array(self.MatrixB)
+        for i in A:
+            print(i)
+            print('\n')
+        return np.linalg.solve(A, B)
+
+class branch():
+    def __init__(self, parent, sol):
+        self.parent = parent
+        self.data = sol
+        self.children = []
+
+def guess(given):
+    puzpuz = given.data.puzz
+    possibilities = []
+    for x in range(len(puzpuz)):
+        for y in range(len(puzpuz[0])):
+            if puzpuz[x][y] == 0:
+                intersects = reduce(np.intersect1d, (given.data.constraints[0][x], given.data.constraints[1][y], given.data.constraints[2][(3 * (x//3)) + (y//3)]))
+                for p in intersects:
+                    puzpuz[x][y] = p
+                    temp = branch(given, Solution(Puzz(puzpuz)))
+            possibilities.append(temp)
+    return possibilities
+
+def iter_improv(initial):
+    while True:
+        possibilities = guess(initial)
+        if possibilities == []:
+            #this branch doesn't lead anywhere, therefore it also cannot be solvable
+            print("dead branch")
+            break
+        else:
+            for p in possibilities:
+                #checking to see if it's solvable
+                if p.data.solvable():
+                    return p.Solve()
+                else:
+                    iter_improv(p)
