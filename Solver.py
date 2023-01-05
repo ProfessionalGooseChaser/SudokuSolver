@@ -187,8 +187,7 @@ class Matrix():
         return True if vars == relationships else False
 
     def CheckSingularity(self):
-        A = np.array(self.trixA)
-        return True if np.linalg.det(A) == 0 else False
+        return True if np.linalg.det(np.array(self.trixA)) == 0 else False
 
     def Solve(self):
         A = np.array(self.trixA)
@@ -263,6 +262,22 @@ def guess(solution):
                     return Branch(solution, guessed)
     return solution
 
+def guess2(solution):
+    twigs = []
+    puzzle = solution.data.puzz.puzz
+    for i in range(len(puzzle)):
+        for j in range(len(puzzle[i])):
+            puzzle = solution.data.puzz.puzz
+            if puzzle[i][j]==0:
+                intersect = reduce(np.intersect1d, (solution.data.RowConstraints[i], solution.data.ColConstraints[j], solution.data.SqrConstraints[3*(i//3) + j//3]))
+                for k in range(len(intersect)):
+                    puzzle[i][j] = intersect[k]
+                    NewPuzz = Puzzle(puzzle)
+                    NewTrix = Matrix(NewPuzz)
+                    guessed = Guesser(NewTrix, NewPuzz)
+                    twigs.append(Branch(solution, guessed))
+    return twigs
+
 def RandomGuess(solution):
     puzzle = solution.puzz.puzz
     while True:
@@ -280,8 +295,8 @@ def RandomGuess(solution):
             
 
 
-def iterative_improvement(initial):  #These two functions were described by Chat GPT. I will upload a picture of what I am referencing
-    solution_set = {} #This needs to become  multi-Linked List. I'm just using nested 
+def iterative_improvement(initial):  
+    solution_set = [] 
     curr = initial
     count = 0
     IFFY = False
@@ -296,7 +311,7 @@ def iterative_improvement(initial):  #These two functions were described by Chat
             continue
         else:
             count += 1
-            solution_set[improved] = curr
+            solution_set.append(improved)
             if improved.data.trix.solvable:
                 if improved.data.trix.CheckSingularity:
                     IFFY = True
@@ -314,6 +329,7 @@ def iterative_improvement(initial):  #These two functions were described by Chat
                         improved.celibate = True
                         continue
             if IFFY:
+                print("HEYO")
                 while len(improved.data.trix.trixA[0]) == len(curr.data.trix.trixA[0]) or improved.celibate:
                     curr = improved.parent
                     
@@ -324,15 +340,35 @@ def iterative_improvement(initial):  #These two functions were described by Chat
             IFFY = False
             curr = improved
     
-
-
+def iter_improv(initial): #all original code
+    current = initial
+    while True:
+        current.children = guess2(current)
+        if(current.children == []):
+            current.celibate = True
+            dead += 1
+            print(dead)
+            break
+        else:
+            alive += 1
+            print(alive)
+            for kid in current.children:
+                if kid.data.trix.solvable() and kid.data.trix.CheckSingularity() == False:
+                    return kid.trix.solve()
+            for child in current.children:
+                iter_improv(child)
+        
+        
 
 #Testing!!
 Trixie = Matrix(puzz=Puzzle(PUZZLE))
-    
+
 GuessNot = Guesser(Trixie, Trixie.puzz)
 Log = Branch(None, GuessNot)
-iterative_improvement(Log)
+
+dead = 0
+alive = 0
+iter_improv(Log)
 
 
 
