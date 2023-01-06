@@ -53,6 +53,7 @@ class Solution():
         self.constraints = []
         self.fillB()
         self.fillA()
+        self.setConstraints()
     
     def fillB(self):
         for i in self.puzz.rows:
@@ -121,12 +122,13 @@ class Solution():
             self.MatrixA.append(s)
         for i in self.MatrixA:
             if sum(i) == 0:
+                print(i)
                 self.MatrixA.remove(i)
 
     def setConstraints(self):
         #Row Constraints
         Rc = []
-        for i in self.puzz.rows():
+        for i in self.puzz.rows:
             temp = list(range(1, 10))
             for j in i:
                 if j in temp:
@@ -136,7 +138,7 @@ class Solution():
 
         #Column Constraints
         Cc = []
-        for i in self.puzz.cols():
+        for i in self.puzz.cols:
             temp = list(range(1, 10))
             for j in i:
                 if j in temp:
@@ -146,7 +148,7 @@ class Solution():
 
         #Square Constraints
         Sc = []
-        for i in self.puzz.sqrs():
+        for i in self.puzz.sqrs:
             temp = list(range(1, 10))
             for j in i:
                 if j in temp:
@@ -158,6 +160,7 @@ class Solution():
         if len(self.MatrixA[0]) != len(self.MatrixB):
             return False
         elif np.linalg.det(np.array(self.MatrixA)) == 0:
+            print(self.MatrixA)
             return False
         else:
             return True
@@ -177,21 +180,26 @@ class branch():
         self.children = []
 
 def guess(given):
-    puzpuz = given.data.puzz
+    puzpuz = given.data.puzz.rows
     possibilities = []
     for x in range(len(puzpuz)):
         for y in range(len(puzpuz[0])):
+            
             if puzpuz[x][y] == 0:
                 intersects = reduce(np.intersect1d, (given.data.constraints[0][x], given.data.constraints[1][y], given.data.constraints[2][(3 * (x//3)) + (y//3)]))
                 for p in intersects:
                     puzpuz[x][y] = p
                     temp = branch(given, Solution(Puzz(puzpuz)))
-            possibilities.append(temp)
+                    possibilities.append(temp)
     return possibilities
 
 def iter_improv(initial):
     while True:
         possibilities = guess(initial)
+        if initial.data.puzz.rows in solset:
+            break
+        else:
+            solset.add(initial.data.puzz.rows)
         if possibilities == []:
             #this branch doesn't lead anywhere, therefore it also cannot be solvable
             print("dead branch")
@@ -199,7 +207,11 @@ def iter_improv(initial):
         else:
             for p in possibilities:
                 #checking to see if it's solvable
-                if p.data.solvable():
+                if p.data.Solvable():
                     return p.Solve()
                 else:
                     iter_improv(p)
+
+solset = set()
+
+iter_improv(branch(None, Solution(Puzz(PUZZLE))))
