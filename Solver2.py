@@ -1,6 +1,8 @@
 from functools import reduce    #used this like once
 import numpy as np              #for the matrix math
+import time
 
+count = 0
 #---------------
 #Testing Puzzle
 PUZZLE =(
@@ -202,37 +204,48 @@ class branch():
         self.data = sol
         self.children = []
 
-def guess(given):
-    #this is fucked up. It changes thingys it shouldnt. I need to create a global variable
+def guess2(given):
+    #This is no longer fucked up but I want to sort intersects by length
     puzpuz = given.data.puzz.rows
     possibilities = []
+    branches = []
     for x in range(len(puzpuz)):
         for y in range(len(puzpuz[0])):
             if puzpuz[x][y] == 0:
                 intersects = reduce(np.intersect1d, (given.data.constraints[0][x], given.data.constraints[1][y], given.data.constraints[2][(3 * (x//3)) + (y//3)]))
-                for p in intersects:
-                    tmpPuz = list(puzpuz)
-                    tmpPuz[x] = list(tmpPuz[x])
-                    tmpPuz[x][y] = p
-                    temp = branch(given, Solution(Puzz(tmpPuz)))
-                    possibilities.append(temp)
-                    tmpPuz[x] = tuple(tmpPuz[x])
-    return possibilities
-
-
+                temp = [(x,y)]
+                temp.extend(list(intersects))
+                possibilities.append(temp)
+    possibilities.sort(key = len)
+    for p in possibilities:
+        x, y = p[0]
+        tmpPuz = list(puzpuz)
+        for pp in range(len(p) - 1):
+            tmpPuz[x] = list(tmpPuz[x])
+            tmpPuz[x][y] = p[pp+1]
+            temp = branch(given, Solution(Puzz(tmpPuz)))
+            branches.append(temp)
+            tmpPuz[x] = tuple(tmpPuz[x])
+    return branches
 
 def iter_improv(initial):
     #systematically takes guesses
     while True:
-        possibilities = guess(initial)
+        possibilities = guess2(initial)
         if initial in solset:
             break
         else:
             solset.add(initial)
         if possibilities == []:
+            
             #this branch doesn't lead anywhere, therefore it also cannot be solvable
-            print("dead branch")
-            break
+            
+            print(np.matrix(initial.data.puzz.rows))
+            print('-------------------------------')
+            print(len(initial.data.MatrixA))
+            print(len(initial.data.MatrixA[0]))
+            print(len(initial.data.MatrixB))
+            return 0
         else:
             for p in possibilities:
                 #checking to see if it's solvable
@@ -251,16 +264,15 @@ solset = set()
 
 tester = branch(None, Solution(Puzz(PUZZLE))) #same as the original
 
-pp = tester.data.puzz.rows
-
-for p in pp:
-    print(p, sum(p), 45 - sum(p))
-
 print('-------------------------------')
 
-pp2 = guess(tester)
-for i in pp2:
-    print(np.matrix(i.data.puzz.rows))
+#for i in pp2:
+    #print(np.matrix(i.data.puzz.rows))
 
+start = time.time()
+iter_improv(tester)
+
+end = time.time()
+print(start-end)
 
 
