@@ -2,7 +2,6 @@ from functools import reduce    #used this like once
 import numpy as np              #for the matrix math
 import time
 
-count = 0
 #---------------
 #Testing Puzzle
 PUZZLE =(
@@ -228,6 +227,8 @@ def guess2(given):
             tmpPuz[x] = tuple(tmpPuz[x])
     return branches
 
+
+
 def iter_improv(initial):
     #systematically takes guesses
     while True:
@@ -237,31 +238,24 @@ def iter_improv(initial):
         else:
             solset.add(initial)
         if possibilities == []:
-            
-            #this branch doesn't lead anywhere, therefore it also cannot be solvable
-            
             print(np.matrix(initial.data.puzz.rows))
-            print('-------------------------------')
-            print(len(initial.data.MatrixA))
-            print(len(initial.data.MatrixA[0]))
-            print(len(initial.data.MatrixB))
-            return 0
+            print(time.time()-start)
+            quit()
         else:
             for p in possibilities:
-                #checking to see if it's solvable
-                if p.data.Solvable():
-                    print(p.Solve())
-                    return p.Solve()
-                else:
-                    iter_improv(p)
+                iter_improv(p)
+        if initial.parent == None:
+            break
+    
+
+
 
 solset = set()
 
 
-
 #Testing
 #--------------
-
+check = False
 tester = branch(None, Solution(Puzz(PUZZLE))) #same as the original
 
 print('-------------------------------')
@@ -270,9 +264,10 @@ print('-------------------------------')
     #print(np.matrix(i.data.puzz.rows))
 
 start = time.time()
+SOLUTION = []
 iter_improv(tester)
 
-end = time.time()
-print(start-end)
+
+print(SOLUTION[0])
 
 
