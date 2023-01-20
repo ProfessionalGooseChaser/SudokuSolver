@@ -1,4 +1,4 @@
-from functools import reduce    #used this like once
+from functools import reduce
 import numpy as np              #for the matrix math
 import time
 
@@ -183,6 +183,7 @@ class Solution():
             return False
         elif np.linalg.det(np.array(self.MatrixA)) == 0:
             #is the determinant non-zero?
+            print("here")
             return False
         else:
             #looks like we're good
@@ -193,7 +194,6 @@ class Solution():
         #this way I don't have to guess the last 24ish vairables
         A = np.array(self.MatrixA)
         B = np.array(self.MatrixB)
-        
         return np.linalg.solve(A, B)
 
 class branch():
@@ -227,25 +227,37 @@ def guess2(given):
             tmpPuz[x] = tuple(tmpPuz[x])
     return branches
 
-
+solved = False
 
 def iter_improv(initial):
+    global solved
     #systematically takes guesses
     while True:
+        if solved:
+            break
         possibilities = guess2(initial)
         if initial in solset:
             break
         else:
             solset.add(initial)
         if possibilities == []:
-            print(np.matrix(initial.data.puzz.rows))
+            file = open("solution.txt", 'w')
+            for line in initial.data.puzz.rows:
+                file.write((str(line)))
+                file.write("\n")
             print(time.time()-start)
-            quit()
+            solved = True
+            #quit()
         else:
             for p in possibilities:
+                if p.data.Solvable():
+                    print(p.data.Solve())
                 iter_improv(p)
+                if solved:
+                    break
         if initial.parent == None:
             break
+        return 0
     
 
 
@@ -267,7 +279,4 @@ start = time.time()
 SOLUTION = []
 iter_improv(tester)
 
-
-print(SOLUTION[0])
-
-
+print(time.time() - start)
