@@ -49,7 +49,10 @@ def cleanUp(trix):
     for x in range(len(trix)):
         for y in range(len(trix[x])):
             j = trix[x][y]
-            j = j[0]
+            try:
+                j = j[0]
+            except:
+                j = 0
             match j:
                 case '/':
                     j = 7
@@ -65,16 +68,35 @@ def cleanUp(trix):
                     j = 5
                 case '_':
                     j = 0
-            j = int(j)
+                case '1':
+                    j = 1
+                case '2':
+                    j = 2
+                case '3':
+                    j = 3
+                case '4':
+                    j = 4
+                case '5':
+                    j = 5
+                case '6':
+                    j = 6
+                case '7':
+                    j = 7
+                case '8':
+                    j = 8
+                case '9':
+                    j = 9
+                case _:
+                    j = 0
             trix[x][y] = j
     return trix
 
 src2 = r"431.webp"
 
-SqrLength, SqrHeight = dimensions(src1)
+SqrLength, SqrHeight = dimensions(src2)
 
 start = time.time()
-trix1 = create_puzzle(find_imgs(src1))
+trix1 = create_puzzle(find_imgs(src2))
 
 print(np.matrix(cleanUp(trix1)))
 print(time.time() - start)
